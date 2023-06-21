@@ -24,8 +24,9 @@ class MyWindow : Window {
       mStride = mBmp.BackBufferStride;
       image.Source = mBmp;
       Content = image;
-
-      DrawMandelbrot (-0.5, 0, 1);
+      MouseMove += OnMouseMove;
+      MouseLeftButtonDown += OnMouseLeftButtonDown;
+      //DrawMandelbrot (-0.5, 0, 1);
    }
 
    void DrawMandelbrot (double xc, double yc, double zoom) {
@@ -42,15 +43,16 @@ class MyWindow : Window {
             }
          }
          mBmp.AddDirtyRect (new Int32Rect (0, 0, dx, dy));
-      } finally {
+      }
+      finally {
          mBmp.Unlock ();
       }
    }
 
    byte Escape (Complex c) {
       Complex z = Complex.Zero;
-      for (int i = 1; i < 32; i++) {
-         if (z.NormSq > 4) return (byte)(i * 8);
+      for (int i = 1; i < 256; i++) {
+         if (z.NormSq > 4) return (byte)(i * 1);
          z = z * z + c;
       }
       return 0;
@@ -65,11 +67,27 @@ class MyWindow : Window {
             int x = (int)pt.X, y = (int)pt.Y;
             SetPixel (x, y, 255);
             mBmp.AddDirtyRect (new Int32Rect (x, y, 1, 1));
-         } finally {
+         }
+         finally {
             mBmp.Unlock ();
          }
       }
    }
+
+   void OnMouseLeftButtonDown (object sender, MouseButtonEventArgs e) {
+      if (FirstClick) {
+         StartPoint = e.GetPosition (this);
+         FirstClick = false;
+      }
+      else {
+         EndPoint = e.GetPosition (this);
+         Line (StartPoint.X, StartPoint.Y, EndPoint.X, EndPoint.Y);
+         FirstClick = true;
+      }
+   }
+   public bool FirstClick = true;
+   public Point StartPoint;
+   public Point EndPoint;
 
    void DrawGraySquare () {
       try {
@@ -81,7 +99,8 @@ class MyWindow : Window {
             }
          }
          mBmp.AddDirtyRect (new Int32Rect (0, 0, 256, 256));
-      } finally {
+      }
+      finally {
          mBmp.Unlock ();
       }
    }
@@ -90,6 +109,24 @@ class MyWindow : Window {
       unsafe {
          var ptr = (byte*)(mBase + y * mStride + x);
          *ptr = gray;
+      }
+   }
+
+   void Line (double x1, double y1, double x2, double y2) {
+      var Length = Point.Subtract (StartPoint, EndPoint).Length;
+      var dX = (x2 - x1) / Length;
+      var dY = (y2 - y1) / Length;
+      try {  
+         mBmp.Lock (); mBase = mBmp.BackBuffer;
+         for (int i = 0; i < Length; i++) {
+            x1 += dX;
+            y1 += dY;
+            int x = (int)x1, y = (int)y1;
+            SetPixel (x, y, 255);
+            mBmp.AddDirtyRect (new Int32Rect (x, y, 1, 1));
+         }
+      } finally {
+         mBmp.Unlock();
       }
    }
 
