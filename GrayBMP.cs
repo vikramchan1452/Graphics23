@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 namespace GrayBMP;
+using static System.Math;
 
 #region class GrayBitmap -------------------------------------------------------
 /// <summary>Implements a writeable grayscale bitmap</summary>
@@ -60,6 +61,30 @@ class GrayBMP {
    /// <summary>Tags a rectangle as dirty (x1, x2, y1, y2 need not be 'ordered')</summary>
    public void Dirty (int x1, int y1, int x2, int y2) {
       Dirty (x1, y1); Dirty (x2, y2);
+   }
+
+   /// <summary>Draws a line between the given endpoints, with the given shade of gray</summary>
+   public void DrawLine (int x1, int y1, int x2, int y2, int gray) {
+      Begin ();
+      int dx = Abs (x2 - x1), dy = -Abs (y2 - y1), error = dx + dy;
+      int stepX = x1 < x2 ? 1 : -1, stepY = y1 < y2 ? 1 : -1;
+
+      while (true) {
+         SetPixel (x1, y1, gray);
+         if (x1 == x2 && y1 == y2) break;
+         int delta = 2 * error;
+         if (delta >= dy) {
+            if (x1 == x2) break;
+            error += dy;
+            x1 += stepX;
+         }
+         if (delta <= dx) {
+            if (y1 == y2) break;
+            error += dx;
+            y1 += stepY;
+         }
+      }
+      End ();
    }
 
    /// <summary>Call End after finishing the update of the bitmap</summary>
