@@ -1,4 +1,5 @@
 ﻿// Geometry.cs - Contains some basic Geometry structs (Complex numbers, Points, Vectors)
+// ---------------------------------------------------------------------------------------
 namespace GrayBMP;
 
 public struct Complex {
@@ -8,12 +9,12 @@ public struct Complex {
    public double Norm => Math.Sqrt (X * X + Y * Y);
    public double NormSq => X * X + Y * Y;
 
-   public static Complex Zero = new (0, 0);
+   public static readonly Complex Zero = new (0, 0);
 
    public static Complex operator + (Complex a, Complex b)
       => new (a.X + b.X, a.Y + b.Y);
    public static Complex operator * (Complex a, Complex b)
       => new (a.X * b.X - a.Y * b.Y, a.X * b.Y + a.Y * b.X);
 
-   public double X, Y;
+   public readonly double X, Y;
 }

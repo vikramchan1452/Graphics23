@@ -1,4 +1,5 @@
 ﻿// Program.cs - Entry point into the GrayBMP application   
+// ---------------------------------------------------------------------------------------
 using System.Windows;
 namespace GrayBMP;
 

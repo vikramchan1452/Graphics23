@@ -3,6 +3,7 @@
 // other using Tasks to get work done on background threads. The Task based
 // approach is more efficient because it does not have the overhead of creating
 // threads on each frame render
+// ---------------------------------------------------------------------------------------
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Controls;
@@ -49,8 +50,8 @@ class MandelWin : Window {
    // for each point on the Complex plane (used to decide the color)
    static byte Escape (Complex c) {
       Complex z = Complex.Zero;
-      for (int i = 1; i < 255; i++) {
-         if (z.NormSq > 4) return (byte)i;
+      for (int i = 1; i < 1024; i++) {
+         if (z.NormSq > 4) return (byte)(i / 4);
          z = z * z + c;
       }
       return 0;
@@ -128,6 +129,7 @@ class MandelWin : Window {
    // the same set of background threads)
    void DrawMandelbrotThread (double xc, double yc, double zoom) {
       mBmp.Begin ();
+      PrepareMandelbrot (xc, yc, zoom);
 
       // We create N threads, and use a CountdownEvent to track if they
       // are all completed. Each time a thread completes, it will signal
