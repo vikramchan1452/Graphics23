@@ -1,8 +1,9 @@
-using System.IO;
+// GrayBMP.cs - Contains the GrayBMP class (implementation of grayscale bitmp on top
+// of a WPF WriteableBitmap class)
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-namespace A25;
+namespace GrayBMP;
 
 #region class GrayBitmap -------------------------------------------------------
 /// <summary>Implements a writeable grayscale bitmap</summary>
