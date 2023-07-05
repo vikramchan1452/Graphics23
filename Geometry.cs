@@ -2,7 +2,7 @@
 // ---------------------------------------------------------------------------------------
 namespace GrayBMP;
 
-public struct Complex {
+public readonly struct Complex {
    public Complex (double x, double y) => (X, Y) = (x, y);
    public override string ToString () => $"{X} + i{Y}";
 

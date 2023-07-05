@@ -52,6 +52,17 @@ class GrayBMP {
       return mBmp.BackBuffer;
    }
 
+   /// <summary>Clear the bitmap to a given shade of gray</summary>
+   public void Clear (int gray) {
+      Begin ();
+      unsafe {
+         var ptr = (byte*)Buffer;
+         System.Runtime.CompilerServices.Unsafe.InitBlock (ref *ptr, (byte)gray, (uint)(mHeight * mStride));
+         Dirty (0, 0, mWidth - 1, mHeight - 1);
+      }
+      End ();
+   }
+
    /// <summary>Tags a pixel as dirty</summary>
    public void Dirty (int x, int y) {
       if (x < mX0) mX0 = x; if (x > mX1) mX1 = x;
@@ -68,20 +79,27 @@ class GrayBMP {
       Begin ();
       int dx = Abs (x2 - x1), dy = -Abs (y2 - y1), error = dx + dy;
       int stepX = x1 < x2 ? 1 : -1, stepY = y1 < y2 ? 1 : -1;
+      int stepYPtr = stepY * mStride;
+      Check (x1, y1); Check (x2, y2);
+      Dirty (x1, y1, x2, y2);
+      byte bGray = (byte)gray;
 
-      while (true) {
-         SetPixel (x1, y1, gray);
-         if (x1 == x2 && y1 == y2) break;
-         int delta = 2 * error;
-         if (delta >= dy) {
-            if (x1 == x2) break;
-            error += dy;
-            x1 += stepX;
-         }
-         if (delta <= dx) {
-            if (y1 == y2) break;
-            error += dx;
-            y1 += stepY;
+      unsafe {
+         byte* ptr = (byte*)(Buffer + y1 * mStride + x1);
+         while (true) {
+            *ptr = bGray;
+            if (x1 == x2 && y1 == y2) break;
+            int delta = 2 * error;
+            if (delta >= dy) {
+               if (x1 == x2) break;
+               error += dy;
+               x1 += stepX; ptr += stepX;
+            }
+            if (delta <= dx) {
+               if (y1 == y2) break;
+               error += dx;
+               y1 += stepY; ptr += stepYPtr;
+            }
          }
       }
       End ();
@@ -103,6 +121,12 @@ class GrayBMP {
       var ptr = Begin () + y * mStride + x;
       unsafe { *(byte*)ptr = (byte)gray; };
       End ();
+   }
+
+   /// <summary>Set a given pixel to a shade of gray</summary>
+   void SetPixelFast (int x, int y, int gray) {
+      var ptr = Buffer + y * mStride + x;
+      unsafe { *(byte*)ptr = (byte)gray; };
    }
    #endregion
 

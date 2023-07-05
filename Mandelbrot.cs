@@ -48,7 +48,7 @@ class MandelWin : Window {
    #region Common code used by the Task approach and Thread approach
    // Basic mandelbrot computation function, computes the 'escape' value
    // for each point on the Complex plane (used to decide the color)
-   static byte Escape (Complex c) {
+   static byte Escape (in Complex c) {
       Complex z = Complex.Zero;
       for (int i = 1; i < 1024; i++) {
          if (z.NormSq > 4) return (byte)(i / 4);
