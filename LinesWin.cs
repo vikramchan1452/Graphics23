@@ -9,7 +9,7 @@ namespace GrayBMP;
 
 class LinesWin : Window {
    public LinesWin () {
-      Width = 800; Height = 600;
+      Width = 900; Height = 600;
       Left = 200; Top = 50;
       WindowStyle = WindowStyle.None;
       mBmp = new GrayBMP (Width, Height);
@@ -29,39 +29,13 @@ class LinesWin : Window {
       DispatcherTimer timer = new () {
          Interval = TimeSpan.FromMilliseconds (100), IsEnabled = true,
       };
-      timer.Tick += NextFrame2;
+      timer.Tick += NextFrame;
    }
    readonly GrayBMP mBmp;
    readonly int mDX, mDY;
 
    void NextFrame (object sender, EventArgs e) {
-      mBmp.Begin ();
-      mBmp.Clear (0);
-      for (int i = mStart; i < mStart + 360; i += 10) {
-         double a = i * Math.PI / 180;
-         int x0 = mDX / 2, y0 = mDY / 2;
-         int x1 = (int)(x0 + Math.Cos (a) * 290 + 0.5);
-         int y1 = (int)(y0 + Math.Sin (a) * 290 + 0.5);
-         mBmp.DrawLine (x0, y0, x1, y1, 255);
-      }
-      mBmp.End ();
-      mStart++;
-   }
-   int mStart;
-
-   void NextFrame1 (object sender, EventArgs e) {
-      using (var bt = new BlockTimer ("Clear")) {
-         mBmp.Begin ();
-         int gray = R.Next (256);
-         for (int i = 0; i < 1000; i++)
-            mBmp.Clear (gray);
-         mBmp.End ();
-      }
-   }
-   Random R = new ();
-
-   void NextFrame2 (object sender, EventArgs e) {
-      using (var bt = new BlockTimer ("Lines")) {
+      using (new BlockTimer ("Lines")) {
          mBmp.Begin ();
          mBmp.Clear (0);
          for (int i = 0; i < 100000; i++) {
@@ -73,6 +47,7 @@ class LinesWin : Window {
          mBmp.End ();
       }
    }
+   Random R = new ();
 }
 
 class BlockTimer : IDisposable {
