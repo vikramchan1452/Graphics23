@@ -11,7 +11,7 @@ class MyWindow : Window {
       Width = 800; Height = 600;
       Left = 50; Top = 50;
       WindowStyle = WindowStyle.None;
-      Image image = new Image () {
+      Image image = new () {
          Stretch = Stretch.None,
          HorizontalAlignment = HorizontalAlignment.Left,
          VerticalAlignment = VerticalAlignment.Top,
@@ -27,6 +27,7 @@ class MyWindow : Window {
       MouseMove += OnMouseMove;
       MouseLeftButtonDown += OnMouseLeftButtonDown;
       //DrawMandelbrot (-0.5, 0, 1);
+      
    }
 
    void DrawMandelbrot (double xc, double yc, double zoom) {
@@ -38,7 +39,7 @@ class MyWindow : Window {
          double x1 = xc - step * dx / 2, y1 = yc + step * dy / 2;
          for (int x = 0; x < dx; x++) {
             for (int y = 0; y < dy; y++) {
-               Complex c = new Complex (x1 + x * step, y1 - y * step);
+               Complex c = new (x1 + x * step, y1 - y * step);
                SetPixel (x, y, Escape (c));
             }
          }
@@ -65,8 +66,8 @@ class MyWindow : Window {
             mBase = mBmp.BackBuffer;
             var pt = e.GetPosition (this);
             int x = (int)pt.X, y = (int)pt.Y;
-            SetPixel (x, y, 255);
-            mBmp.AddDirtyRect (new Int32Rect (x, y, 1, 1));
+            //SetPixel (x, y, 255);
+            //mBmp.AddDirtyRect (new Int32Rect (x, y, 1, 1));
          }
          finally {
             mBmp.Unlock ();
@@ -75,19 +76,18 @@ class MyWindow : Window {
    }
 
    void OnMouseLeftButtonDown (object sender, MouseButtonEventArgs e) {
-      if (FirstClick) {
-         StartPoint = e.GetPosition (this);
-         FirstClick = false;
+      if (mFirstClick) {
+         mStartPoint = e.GetPosition (this);
+         mFirstClick = false;
       }
       else {
-         EndPoint = e.GetPosition (this);
-         Line (StartPoint.X, StartPoint.Y, EndPoint.X, EndPoint.Y);
-         FirstClick = true;
+         mEndPoint = e.GetPosition (this);
+         //DrawFLine (mStartPoint.X, mStartPoint.Y, mEndPoint.X, mEndPoint.Y);
+         DrawIntLine ((int)mStartPoint.X, (int)mStartPoint.Y, (int)mEndPoint.X, (int)mEndPoint.Y);
+         //DrawInt2Line ((int)mStartPoint.X, (int)mStartPoint.Y, (int)mEndPoint.X, (int)mEndPoint.Y);
+         mFirstClick = true;
       }
    }
-   public bool FirstClick = true;
-   public Point StartPoint;
-   public Point EndPoint;
 
    void DrawGraySquare () {
       try {
@@ -112,27 +112,97 @@ class MyWindow : Window {
       }
    }
 
-   void Line (double x1, double y1, double x2, double y2) {
-      var Length = Point.Subtract (StartPoint, EndPoint).Length;
-      var dX = (x2 - x1) / Length;
-      var dY = (y2 - y1) / Length;
-      try {  
+   // Drawing line using FLOAT arithmetic:
+   void DrawFloatLine (double x1, double y1, double x2, double y2) {
+      var Length = Point.Subtract (mStartPoint, mEndPoint).Length;
+      var (dX, dY) = ((x2 - x1) / Length, (y2 - y1) / Length);
+      try {
          mBmp.Lock (); mBase = mBmp.BackBuffer;
          for (int i = 0; i < Length; i++) {
-            x1 += dX;
-            y1 += dY;
-            int x = (int)x1, y = (int)y1;
+            x1 += dX; y1 += dY;
+            var (x, y) = ((int)x1, (int)y1);
             SetPixel (x, y, 255);
             mBmp.AddDirtyRect (new Int32Rect (x, y, 1, 1));
          }
-      } finally {
-         mBmp.Unlock();
-      }
+      } finally { mBmp.Unlock (); }
    }
 
-   WriteableBitmap mBmp;
-   int mStride;
+   // Drawing line using INTEGER arithmetic (Bresenham method):
+   void DrawIntLine (int x1, int y1, int x2, int y2) {
+      if (x2 < x1) (x1, y1, x2, y2) = (x2, y2, x1, y1); // We always plot the graph for increasing x.
+      var (delX, delY, yInc) = (x2 - x1, y2 - y1, 1);
+      if (delY < 0) (yInc, delY) = (-1, -delY);
+      try {
+         mBmp.Lock (); mBase = mBmp.BackBuffer;
+         var (P, x, y, cond) = (2 * delY - delX, x1, y1, true);
+         if (delX > delY) { // for (slope < 1)
+            while (x <= x2) {
+               SetPixel (x, y, 255);
+               mBmp.AddDirtyRect (new Int32Rect (x, y, 1, 1));
+               if (P >= 0) { P -= 2 * delX; y += yInc; }
+               P += 2 * delY; x++;
+            }
+         }
+         else { //for (slope >= 1)
+            while (cond) {
+               SetPixel (x, y, 255);
+               mBmp.AddDirtyRect (new Int32Rect (x, y, 1, 1));
+               if (P >= 0) { P -= 2 * delY; x++; }
+               P += 2 * delX;
+               if (yInc == 1) { cond = y <= y2; y++; }
+               else { cond = y >= y2; y--; }
+            }
+         }
+         //var (P, x, y, cond) = (2 * delY - delX, x1, y1, true);
+         //while (cond) {
+         //   SetPixel (x, y, 255);
+         //   mBmp.AddDirtyRect (new Int32Rect (x, y, 1, 1));
+         //   if (delX > delY) { // for (slope < 1)
+         //      if (P >= 0) { P -= 2 * delX; y += yInc; }
+         //      P += 2 * delY; x++;
+         //      cond = x <= x2;
+         //   } 
+         //   else { // for (slope >= 1)
+         //      if (P >= 0) { P -= 2 * delY; x++; }
+         //      P += 2 * delX;
+         //      if (yInc == 1) { cond = y <= y2; y++; }
+         //      else { cond = y >= y2; y--; }
+         //   }
+         //}
+      } finally { mBmp.Unlock (); }
+   }
+
+   // Drawing line using INTEGER arithmetic (Optimized Bresenham method):
+   void DrawInt2Line (int x0, int y0, int x1, int y1) {
+      var (dx, dy) = (Math.Abs (x1 - x0), -Math.Abs (y1 - y0));
+      var (sx, sy) = (x0 < x1 ? 1 : -1, y0 < y1 ? 1 : -1);
+      var error = dx + dy;
+      try {
+         mBmp.Lock (); mBase = mBmp.BackBuffer;
+         while (true) {
+            SetPixel (x0, y0, 255);
+            mBmp.AddDirtyRect (new Int32Rect (x0, y0, 1, 1));
+            if (x0 == x1 && y0 == y1) break;
+            var e2 = 2 * error;
+            if (e2 >= dy) {
+               if (x0 == x1) break;
+               error += dy;
+               x0 += sx;
+            }
+            else if (e2 >= dx) {
+               if (y0 == y1) break;
+               error += dx;
+               y0 += sy;
+            }
+         }
+      } finally { mBmp.Unlock (); }
+   }
+
+   readonly WriteableBitmap mBmp;
+   readonly int mStride;
    nint mBase;
+   public bool mFirstClick = true;
+   public Point mStartPoint, mEndPoint;
 }
 
 internal class Program {
@@ -140,7 +210,7 @@ internal class Program {
    static void Main (string[] args) {
       Window w = new MyWindow ();
       w.Show ();
-      Application app = new Application ();
+      Application app = new ();
       app.Run ();
    }
 }
