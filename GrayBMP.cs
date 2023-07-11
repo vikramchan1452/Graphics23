@@ -1,6 +1,7 @@
 // GrayBMP.cs - Contains the GrayBMP class (implementation of grayscale bitmp on top
 // of a WPF WriteableBitmap class)
 // ---------------------------------------------------------------------------------------
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -76,12 +77,12 @@ class GrayBMP {
 
    /// <summary>Draws a line between the given endpoints, with the given shade of gray</summary>
    public void DrawLine (int x1, int y1, int x2, int y2, int gray) {
+      if (y1 == y2) { DrawHorizontalLine (x1, x2, y1, gray); return; }
       Begin ();
       int dx = Abs (x2 - x1), dy = -Abs (y2 - y1), error = dx + dy;
       int stepX = x1 < x2 ? 1 : -1, stepY = y1 < y2 ? 1 : -1;
       int stepYPtr = stepY * mStride;
-      Check (x1, y1); Check (x2, y2);
-      Dirty (x1, y1, x2, y2);
+      Check (x1, y1); Check (x2, y2); Dirty (x1, y1, x2, y2);
       byte bGray = (byte)gray;
 
       unsafe {
@@ -101,6 +102,22 @@ class GrayBMP {
                y1 += stepY; ptr += stepYPtr;
             }
          }
+      }
+      End ();
+   }
+
+   /// <summary>
+   /// Draws a horizontal line between the two given end-points (with given shade of gray)
+   /// </summary>
+   public void DrawHorizontalLine (int x1, int x2, int y, int gray) {
+      Begin ();
+      Check (x1, y); Check (x2, y); Dirty (x1, y, x2, y);
+      byte bGray = (byte)gray;
+      if (x1 > x2) (x1, x2) = (x2, x1);
+      unsafe {
+         byte* ptr = (byte*)(Buffer + y * Stride + x1);
+         for (int i = x2 - x1; i >= 0; i--)
+            *ptr++ = bGray;
       }
       End ();
    }
@@ -127,6 +144,31 @@ class GrayBMP {
    void SetPixelFast (int x, int y, int gray) {
       var ptr = Buffer + y * mStride + x;
       unsafe { *(byte*)ptr = (byte)gray; };
+   }
+
+   /// <summary>
+   /// Copies from a bitmap that is 8X larger in Width/Height
+   /// </summary>
+   public void ShrinkCopyFrom (GrayBMP big, int scale) {
+      Begin (); big.Begin ();
+      Debug.Assert (big.Width == Width * scale && big.Height == Height * scale);
+      unsafe {
+         for (int y = 0; y < Height; y++) {
+            for (int x = 0; x < Width; x++) {
+               byte* pDst = (byte*)(Buffer + y * mStride + x);
+               byte* pSrc = (byte*)(big.Buffer + y * scale * big.mStride + x * scale);
+
+               int total = 0;
+               for (int j = 0; j < scale; j++) {
+                  byte* p = pSrc + j * big.mStride;
+                  for (int i = 0; i < scale; i++) total += *p++;
+               }
+               *pDst = (byte)(total / (scale * scale));
+            }
+         }
+      }
+      Dirty (0, 0, Width - 1, Height - 1);
+      big.End (); End ();
    }
    #endregion
 

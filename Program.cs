@@ -6,8 +6,7 @@ namespace GrayBMP;
 class Program {
    [STAThread]
    static void Main () {
-      // Create a LinesWin that demonstrates the Line Drawing
-      new LinesWin ().Show ();
+      new PolyFillWin ().Show ();
       new Application ().Run ();
    }
 
@@ -17,6 +16,13 @@ class Program {
       // and create an Application object to do message-pumping and keep
       // the window alive
       new MandelWin ().Show ();
+      new Application ().Run ();
+   }
+
+   [STAThread]
+   static void Main2 () {
+      // Create a LinesWin that demonstrates the Line Drawing
+      new LinesWin ().Show ();
       new Application ().Run ();
    }
 }
