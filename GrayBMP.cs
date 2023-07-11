@@ -1,7 +1,6 @@
 // GrayBMP.cs - Contains the GrayBMP class (implementation of grayscale bitmp on top
 // of a WPF WriteableBitmap class)
 // ---------------------------------------------------------------------------------------
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -74,6 +73,11 @@ class GrayBMP {
    public void Dirty (int x1, int y1, int x2, int y2) {
       Dirty (x1, y1); Dirty (x2, y2);
    }
+   /// <summary>
+   /// Tags the entire bitmap as dirty
+   /// </summary>
+   public void Dirty () 
+      => Dirty (0, 0, Width - 1, Height - 1);
 
    /// <summary>Draws a line between the given endpoints, with the given shade of gray</summary>
    public void DrawLine (int x1, int y1, int x2, int y2, int gray) {
@@ -144,31 +148,6 @@ class GrayBMP {
    void SetPixelFast (int x, int y, int gray) {
       var ptr = Buffer + y * mStride + x;
       unsafe { *(byte*)ptr = (byte)gray; };
-   }
-
-   /// <summary>
-   /// Copies from a bitmap that is 8X larger in Width/Height
-   /// </summary>
-   public void ShrinkCopyFrom (GrayBMP big, int scale) {
-      Begin (); big.Begin ();
-      Debug.Assert (big.Width == Width * scale && big.Height == Height * scale);
-      unsafe {
-         for (int y = 0; y < Height; y++) {
-            for (int x = 0; x < Width; x++) {
-               byte* pDst = (byte*)(Buffer + y * mStride + x);
-               byte* pSrc = (byte*)(big.Buffer + y * scale * big.mStride + x * scale);
-
-               int total = 0;
-               for (int j = 0; j < scale; j++) {
-                  byte* p = pSrc + j * big.mStride;
-                  for (int i = 0; i < scale; i++) total += *p++;
-               }
-               *pDst = (byte)(total / (scale * scale));
-            }
-         }
-      }
-      Dirty (0, 0, Width - 1, Height - 1);
-      big.End (); End ();
    }
    #endregion
 
