@@ -21,21 +21,12 @@ readonly struct Complex {
 }
 
 /// <summary>A point in 2D space, with double-precision coordinates (X, Y)</summary>
-readonly struct Point2 {
-   public Point2 (double x, double y) => (X, Y) = (x, y);
+readonly record struct Point2 (double X, double Y) {
    public (int X, int Y) Round () => ((int)(X + 0.5), (int)(Y + 0.5));
-   public override string ToString () => $"({Math.Round (X, 6)}, {Math.Round (Y, 6)})";
-
-   public readonly double X, Y;
 }
 
 /// <summary>A Line in 2 dimensions (A -> B)</summary>
-readonly struct Line {
-   public Line (Point2 a, Point2 b) => (A, B) = (a, b);
-   public override string ToString () => $"{A} -> {B}";
-
-   public readonly Point2 A, B;
-}
+readonly record struct Line (Point2 A, Point2 B);
 
 /// <summary>A drawing is a collection of lines</summary>
 class Drawing {
