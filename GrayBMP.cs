@@ -81,6 +81,7 @@ class GrayBMP {
       int stepX = x1 < x2 ? 1 : -1, stepY = y1 < y2 ? 1 : -1;
       int stepYPtr = stepY * mStride;
       Check (x1, y1); Check (x2, y2);
+      if (y1 < 0) y1 = 0; if (y1 >= mHeight) y1 = mHeight;
       Dirty (x1, y1, x2, y2);
       byte bGray = (byte)gray;
 
