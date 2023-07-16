@@ -22,37 +22,35 @@ class PolyFill : Window {
       RenderOptions.SetEdgeMode(image, EdgeMode.Aliased);
       Content = image;
 
-      Fill();
+      var LeafPoints = AddLine();
+      Fill (LeafPoints, 255);
    }
    readonly GrayBMP mBmp;
 
-   void Fill() {
+   public static List<Point> AddLine() {
       using var lines = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream("GrayBMP.Data.leaf-fill.txt"));
       var PolyPoints = lines.ReadToEnd().Replace("\r\n", " ").TrimEnd().Split(' ').Select(int.Parse).ToList();
-
       List<Point> mLines = new();
-      for (int i = 0; i < PolyPoints.Count; i++) 
-         mLines.Add(new Point(PolyPoints[i], PolyPoints[i++]));
-     
-      int ht = (int)Height;
+      for (int i = 0; i < PolyPoints.Count; i += 2)
+         mLines.Add(new Point(PolyPoints[i], PolyPoints[i + 1]));
+      return mLines;
+   }
+   public void Fill(List<Point> mLines, int color) {
       List<int> intersections = new();
-
-      for (int y = 0; y < ht; y++) {
-         var scan = y + 0.5;
+      for (double scan = 0.5; scan < Height; scan++) {
          intersections.Clear();
-         for (int i = 0; i < mLines.Count; i++) {
-            var (j, P) = (i + 1, 0);
+         for (int i = 0; i < mLines.Count; i += 2) {
+            var j = i + 1;
             var (x1, y1, x2, y2) = (mLines[i].X, mLines[i].Y, mLines[j].X, mLines[j].Y);
-            if (y1 == y2) continue;
-            if (x1 == x2) P = (int)x1;
-            if ((scan >= Math.Min(y1, y2)) && (scan < Math.Max(y1, y2))) {
-               P = (int)(x1 + (x2 - x1) * (y - y1) / (y2 - y1));
+            if ((y1 != y2) && (scan >= Math.Min(y1, y2)) && (scan < Math.Max(y1, y2))) {
+               int P = (int)(x1 + (x2 - x1) * (scan - y1) / (y2 - y1));
                intersections.Add(P);
             }
          }
          intersections.Sort();
+         int y = (int)(Height - scan - 0.5); // Since origin is at top left (y decreases with increasing x), we have to flip the y value.
          for (int n = 0; n < intersections.Count; n += 2)
-            mBmp.DrawLine(intersections[n], ht - y, intersections[n + 1], ht - y, 255);
+            mBmp.DrawLine(intersections[n], y, intersections[n + 1], y, color);
       }
    }
 }

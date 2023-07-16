@@ -6,8 +6,7 @@ namespace GrayBMP;
 class Program {
    [STAThread]
    static void Main () {
-      // Create a LinesWin that demonstrates the Line Drawing
-      //new LinesWin ().Show ();
+      // Create a PolyFill to fill the polygons in leaf-fill file.
       new PolyFill ().Show ();
       new Application ().Run ();
    }
@@ -19,5 +18,11 @@ class Program {
       // the window alive
       new MandelWin ().Show ();
       new Application ().Run ();
+   }
+
+   static void Main2() {
+      // Create a LinesWin that demonstrates the Line Drawing
+      new LinesWin ().Show ();
+      new Application().Run();
    }
 }
