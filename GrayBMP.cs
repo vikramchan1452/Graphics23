@@ -1,6 +1,7 @@
 // GrayBMP.cs - Contains the GrayBMP class (implementation of grayscale bitmp on top
 // of a WPF WriteableBitmap class)
 // ---------------------------------------------------------------------------------------
+
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -73,10 +74,8 @@ class GrayBMP {
    public void Dirty (int x1, int y1, int x2, int y2) {
       Dirty (x1, y1); Dirty (x2, y2);
    }
-   /// <summary>
-   /// Tags the entire bitmap as dirty
-   /// </summary>
-   public void Dirty () 
+   /// <summary>Tags the entire bitmap as dirty</summary>
+   public void Dirty ()
       => Dirty (0, 0, Width - 1, Height - 1);
 
    /// <summary>Draws a line between the given endpoints, with the given shade of gray</summary>
@@ -125,6 +124,39 @@ class GrayBMP {
       }
       End ();
    }
+
+   /// <summary>
+   /// Draws a thick line between the two given end-points (with given size & given shade of gray)
+   /// </summary>
+
+   public void DrawThickLine (int x1, int y1, int x2, int y2, int width, int color) {
+      Begin (); 
+      Check (x1, y1); Check (x2, y2); Dirty (x1, y1, x2, y2);
+
+      const double OneRadian = PI / 180;
+      double offset = width * 0.5;
+      var BaseAngle = Atan2 (y2 - y1, x2 - x1) / OneRadian;
+
+      System.Drawing.Point[] HexPoints = new System.Drawing.Point[8];
+      for (int Theta1 = 90, Theta2 = 270, i = 0; Theta1 <= 270; Theta1 += 60, Theta2 += 60, i++) {
+         var A = Translate (x1, y1, Theta1 + BaseAngle, offset);
+         var B = Translate (x2, y2, Theta2 + BaseAngle, offset);
+         HexPoints[i] = A; HexPoints[i + 4] = B;
+      }
+
+      static System.Drawing.Point Translate (int x, int y, double angle, double distance)
+         => new ((int)(x + (distance * Cos (angle * OneRadian)) + 0.5), (int)(y + (distance * Sin (angle * OneRadian)) + 0.5));
+
+      PolyFillFast p = new ();
+      for (int i = 0; i < 8; i++) {
+         var (X1, Y1, X2, Y2) = (HexPoints[i].X, HexPoints[i].Y, HexPoints[(i + 1) % 8].X, HexPoints[(i + 1) % 8].Y);
+         p.AddLine (X1, Y1, X2, Y2);
+      }
+      p.Fill (this, color);
+
+      End ();
+   }
+
 
    /// <summary>Call End after finishing the update of the bitmap</summary>
    public void End () {
