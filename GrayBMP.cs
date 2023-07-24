@@ -109,9 +109,7 @@ class GrayBMP {
       End ();
    }
 
-   /// <summary>
-   /// Draws a horizontal line between the two given end-points (with given shade of gray)
-   /// </summary>
+   /// <summary>Draws a horizontal line between the two given end-points (with given shade of gray)</summary>
    public void DrawHorizontalLine (int x1, int x2, int y, int gray) {
       Begin ();
       Check (x1, y); Check (x2, y); Dirty (x1, y, x2, y);
@@ -125,38 +123,32 @@ class GrayBMP {
       End ();
    }
 
-   /// <summary>
-   /// Draws a thick line between the two given end-points (with given size & given shade of gray)
-   /// </summary>
-
+   /// <summary>Draws a thick line between the two given end-points (with given size & given shade of gray)</summary>
    public void DrawThickLine (int x1, int y1, int x2, int y2, int width, int color) {
       Begin (); 
       Check (x1, y1); Check (x2, y2); Dirty (x1, y1, x2, y2);
 
-      const double OneRadian = PI / 180;
       double offset = width * 0.5;
-      var BaseAngle = Atan2 (y2 - y1, x2 - x1) / OneRadian;
-
-      System.Drawing.Point[] HexPoints = new System.Drawing.Point[8];
-      for (int Theta1 = 90, Theta2 = 270, i = 0; Theta1 <= 270; Theta1 += 60, Theta2 += 60, i++) {
-         var A = Translate (x1, y1, Theta1 + BaseAngle, offset);
-         var B = Translate (x2, y2, Theta2 + BaseAngle, offset);
-         HexPoints[i] = A; HexPoints[i + 4] = B;
+      double baseAngle = Atan2 (y2 - y1, x2 - x1);
+      double theta = PI / 2, factor = PI / 3;
+      mPFF.Reset ();
+      for (int i = 0; i < 3; i++) {
+         var a = Translate (x1, y1, (theta + i * factor) + baseAngle, offset);
+         var b = Translate (x1, y1, (theta + (i + 1) * factor) + baseAngle, offset);
+         var c = Translate (x2, y2, (theta - i * factor) + baseAngle, offset);
+         var d = Translate (x2, y2, (theta - (i + 1) * factor) + baseAngle, offset);
+         mPFF.AddLine (a.X, a.Y, b.X, b.Y);
+         mPFF.AddLine (c.X, c.Y, d.X, d.Y);
+         if (i == 0) mPFF.AddLine (a.X, a.Y, c.X, c.Y);
+         if (i == 2) mPFF.AddLine (b.X, b.Y, d.X, d.Y);
       }
+      mPFF.Fill (this, color);
+      End ();
 
       static System.Drawing.Point Translate (int x, int y, double angle, double distance)
-         => new ((int)(x + (distance * Cos (angle * OneRadian)) + 0.5), (int)(y + (distance * Sin (angle * OneRadian)) + 0.5));
+         => new ((int)(x + distance * Cos (angle)), (int)(y + distance * Sin (angle)));
 
-      PolyFillFast p = new ();
-      for (int i = 0; i < 8; i++) {
-         var (X1, Y1, X2, Y2) = (HexPoints[i].X, HexPoints[i].Y, HexPoints[(i + 1) % 8].X, HexPoints[(i + 1) % 8].Y);
-         p.AddLine (X1, Y1, X2, Y2);
-      }
-      p.Fill (this, color);
-
-      End ();
    }
-
 
    /// <summary>Call End after finishing the update of the bitmap</summary>
    public void End () {
@@ -198,6 +190,7 @@ class GrayBMP {
    readonly nint mBuffer;
    int mX0, mY0, mX1, mY1;    // The 'dirty rectangle'
    int mcLocks;               // Number of unmatched Begin() calls
+   PolyFillFast mPFF = new ();
    #endregion
 }
 #endregion
