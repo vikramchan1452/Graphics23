@@ -58,7 +58,7 @@ class PolyFillWin : Window {
       }
       mBmp.End ();
    }
-   PolyFillFast mPF = new ();
+   PolyFill mPF = new ();
 
    Drawing LoadDrawing () {
       Drawing dwg = new ();

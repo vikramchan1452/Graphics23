@@ -3,10 +3,7 @@
 namespace GrayBMP;
 
 /// <summary>A number in the complex plane of the form (X + iY)</summary>
-readonly struct Complex {
-   public Complex (double x, double y) => (X, Y) = (x, y);
-   public override string ToString () => $"{X} + i{Y}";
-
+readonly record struct Complex (double X, double Y) {
    public double Norm => Math.Sqrt (X * X + Y * Y);
    public double NormSq => X * X + Y * Y;
 
@@ -16,8 +13,6 @@ readonly struct Complex {
       => new (a.X + b.X, a.Y + b.Y);
    public static Complex operator * (Complex a, Complex b)
       => new (a.X * b.X - a.Y * b.Y, a.X * b.Y + a.Y * b.X);
-
-   public readonly double X, Y;
 }
 
 /// <summary>A point in 2D space, with double-precision coordinates (X, Y)</summary>

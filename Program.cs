@@ -6,6 +6,7 @@ namespace GrayBMP;
 class Program {
    [STAThread]
    static void Main () {
+      // Create a PolyFillWin that demonstrates polygon filling
       new PolyFillWin ().Show ();
       new Application ().Run ();
    }

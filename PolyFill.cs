@@ -1,41 +1,8 @@
 ﻿// PolyFill.cs - Polygon filler
 // ---------------------------------------------------------------------------------------
-//#define SORTEDAEL
 namespace GrayBMP;
 
 class PolyFill {
-   public void AddLine (int x0, int y0, int x1, int y1) {
-      if (y0 == y1) return;
-      if (y0 > y1) (x0, y0, x1, y1) = (x1, y1, x0, y0);
-      mLines.Add (new NLine (new NPoint (x0, y0), new NPoint (x1, y1)));
-   }
-
-   public void Fill (GrayBMP bmp, int color) {
-      bmp.Begin ();
-      List<int> ints = new ();
-      for (int y = 0; y < bmp.Height; y++) {
-         double yf = y + 0.5;
-         ints.Clear ();
-         foreach (var line in mLines) {
-            if (line.A.Y > yf || line.B.Y < yf) continue;
-            double t = (double)(y - line.A.Y) / (line.B.Y - line.A.Y);
-            double x = line.A.X * (1 - t) + line.B.X * t;
-            ints.Add ((int)(x + 0.5));
-         }
-         ints.Sort ();
-         for (int i = 0; i < ints.Count; i += 2)
-            bmp.DrawHorizontalLine (ints[i], ints[i + 1], y, color);
-      }
-      bmp.Dirty ();
-      bmp.End ();
-   }
-
-   readonly record struct NPoint (int X, int Y);
-   readonly record struct NLine (NPoint A, NPoint B);
-   List<NLine> mLines = new List<NLine> ();
-}
-
-class PolyFillFast {
    public void AddLine (int x0, int y0, int x1, int y1) {
       if (y0 == y1) return;
       if (y0 > y1) (x0, y0, x1, y1) = (x1, y1, x0, y0);
@@ -59,16 +26,8 @@ class PolyFillFast {
          active.RemoveAll (a => a.Life == 0);
 
          // Figure out all the edges that need to come in here
-         while (nEvent < mEvents.Count && mEvents[nEvent].Y == y) {
-#if SORTEDAEL
-            var e = mEdges[mEvents[nEvent++].Index];
-            int n = active.BinarySearch (e);
-            if (n < 0) active.Insert (~n, e);
-            else throw new NotImplementedException ();
-#else
+         while (nEvent < mEvents.Count && mEvents[nEvent].Y == y) 
             active.Add (mEdges[mEvents[nEvent++].Index]);
-#endif
-         }
 
          ints.Clear ();
          for (int i = 0; i < active.Count; i++) {
@@ -77,9 +36,7 @@ class PolyFillFast {
             e.X += e.DX; e.Life--;
             active[i] = e;
          }
-#if !SORTEDAEL
          ints.Sort ();
-#endif
          for (int i = 0; i < ints.Count; i += 2)
             bmp.DrawHorizontalLine (ints[i], ints[i + 1], y, color);
       }

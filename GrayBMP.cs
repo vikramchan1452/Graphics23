@@ -73,9 +73,7 @@ class GrayBMP {
    public void Dirty (int x1, int y1, int x2, int y2) {
       Dirty (x1, y1); Dirty (x2, y2);
    }
-   /// <summary>
-   /// Tags the entire bitmap as dirty
-   /// </summary>
+   /// <summary>Tags the entire bitmap as dirty</summary>
    public void Dirty () 
       => Dirty (0, 0, Width - 1, Height - 1);
 
@@ -110,9 +108,7 @@ class GrayBMP {
       End ();
    }
 
-   /// <summary>
-   /// Draws a horizontal line between the two given end-points (with given shade of gray)
-   /// </summary>
+   /// <summary>Draws a horizontal line between the two given end-points (with given shade of gray)</summary>
    public void DrawHorizontalLine (int x1, int x2, int y, int gray) {
       Begin ();
       Check (x1, y); Check (x2, y); Dirty (x1, y, x2, y);
