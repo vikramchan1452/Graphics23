@@ -27,7 +27,7 @@ class PolyFillWin : Window {
 
       mDwg = LoadDrawing ();
       DispatcherTimer timer = new () {
-         Interval = TimeSpan.FromMilliseconds (500), IsEnabled = true,
+         Interval = TimeSpan.FromMilliseconds (20), IsEnabled = true,
       };
       timer.Tick += NextFrame;
    }
@@ -55,12 +55,14 @@ class PolyFillWin : Window {
    void DrawLeaf () {
       mBmp.Begin ();
       mBmp.Clear (192);
+
       mPF.Reset ();
       foreach (var (a, b) in EnumLines ())
          mPF.AddLine (a, b);
       mPF.Fill (mBmp, 255);
       foreach (var (a, b) in EnumLines ())
          mBmp.DrawLine (a, b, 0);
+
       mBmp.End ();
 
       // Enumerate all the lines from the Dwg
