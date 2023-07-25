@@ -37,8 +37,8 @@ class PolyFillWin : Window {
    void NextFrame (object s, EventArgs e) {
       using (new BlockTimer ("Leaf")) {
          mBmp.Begin ();
-         DrawLeaf ();
-         // DrawFatLines ();
+         // DrawLeaf ();
+         DrawFatLines ();
          mBmp.End ();
       }
    }
