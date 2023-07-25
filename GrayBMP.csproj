@@ -10,11 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Data\leaf-fill.txt" />
+    <None Remove="Data\leaf-poly.txt" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Data\leaf-fill.txt" />
+    <EmbeddedResource Include="Data\leaf-poly.txt" />
   </ItemGroup>
 
 </Project>

@@ -14,6 +14,11 @@ class PolyFill {
    }
    int mYMin = int.MaxValue, mYMax = int.MinValue;
 
+   public void AddLine (Point2 a, Point2 b) {
+      var ((x0, y0), (x1, y1)) = (a.Round (), b.Round ());
+      AddLine (x0, y0, x1, y1);
+   }
+
    public void Fill (GrayBMP bmp, int color) {
       bmp.Begin ();
 
@@ -41,7 +46,7 @@ class PolyFill {
             bmp.DrawHorizontalLine (ints[i], ints[i + 1], y, color);
       }
 
-      bmp.Dirty ();
+      bmp.Dirty (0, mYMin, bmp.Width - 1, mYMax);
       bmp.End ();
    }
 

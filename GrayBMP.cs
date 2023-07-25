@@ -108,6 +108,11 @@ class GrayBMP {
       End ();
    }
 
+   public void DrawLine (Point2 a, Point2 b, int gray) {
+      var ((x0, y0), (x1, y1)) = (a.Round (), b.Round ());
+      DrawLine (x0, y0, x1, y1, gray);
+   }
+
    /// <summary>Draws a horizontal line between the two given end-points (with given shade of gray)</summary>
    public void DrawHorizontalLine (int x1, int x2, int y, int gray) {
       Begin ();
@@ -119,6 +124,12 @@ class GrayBMP {
          for (int i = x2 - x1; i >= 0; i--)
             *ptr++ = bGray;
       }
+      End ();
+   }
+
+   public void DrawThickLine (Point2 a, Point2 b, double thickness, int gray) {
+      Begin ();
+      DrawLine (a, b, gray);
       End ();
    }
 
