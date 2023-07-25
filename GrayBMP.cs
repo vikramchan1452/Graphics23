@@ -5,8 +5,8 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-namespace GrayBMP;
 using static System.Math;
+namespace GrayBMP;
 
 #region class GrayBitmap -------------------------------------------------------
 /// <summary>Implements a writeable grayscale bitmap</summary>
@@ -42,7 +42,7 @@ class GrayBMP {
    public int Width => mWidth;
    #endregion
 
-   #region Methods -----------------------------------------
+   #region Methods ------------------------------------------
    /// <summary>Call Begin before you obtain the Buffer to update the bitmap</summary>
    public nint Begin () {
       if (mcLocks++ == 0) {
@@ -127,27 +127,26 @@ class GrayBMP {
    public void DrawThickLine (int x1, int y1, int x2, int y2, int width, int color) {
       Begin (); 
       Check (x1, y1); Check (x2, y2); Dirty (x1, y1, x2, y2);
-
       double offset = width * 0.5;
       double baseAngle = Atan2 (y2 - y1, x2 - x1);
       double theta = PI / 2, factor = PI / 3;
       mPFF.Reset ();
       for (int i = 0; i < 3; i++) {
-         var a = Translate (x1, y1, (theta + i * factor) + baseAngle, offset);
-         var b = Translate (x1, y1, (theta + (i + 1) * factor) + baseAngle, offset);
-         var c = Translate (x2, y2, (theta - i * factor) + baseAngle, offset);
-         var d = Translate (x2, y2, (theta - (i + 1) * factor) + baseAngle, offset);
+         var j = i + 1;
+         var a = Translate (x1, y1, baseAngle + (theta + i * factor), offset);
+         var b = Translate (x1, y1, baseAngle + (theta + j * factor), offset);
+         var c = Translate (x2, y2, baseAngle + (theta - i * factor), offset);
+         var d = Translate (x2, y2, baseAngle + (theta - j * factor), offset);
          mPFF.AddLine (a.X, a.Y, b.X, b.Y);
          mPFF.AddLine (c.X, c.Y, d.X, d.Y);
          if (i == 0) mPFF.AddLine (a.X, a.Y, c.X, c.Y);
-         if (i == 2) mPFF.AddLine (b.X, b.Y, d.X, d.Y);
+         else if (i == 2) mPFF.AddLine (b.X, b.Y, d.X, d.Y);
       }
       mPFF.Fill (this, color);
       End ();
 
       static System.Drawing.Point Translate (int x, int y, double angle, double distance)
          => new ((int)(x + distance * Cos (angle)), (int)(y + distance * Sin (angle)));
-
    }
 
    /// <summary>Call End after finishing the update of the bitmap</summary>
@@ -175,7 +174,7 @@ class GrayBMP {
    }
    #endregion
 
-   #region Implementation ----------------------------------
+   #region Implementation -----------------------------------
    void Check (int x, int y) {
       if (x < 0 || x >= mWidth || y < 0 || y >= mHeight)
          Fatal ($"Pixel location out of range: ({x},{y})");
