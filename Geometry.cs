@@ -27,13 +27,47 @@ readonly record struct Point2 (double X, double Y) {
    public static Point2 operator + (Point2 p, Vector2 v) => new (p.X + v.X, p.Y + v.Y);
 }
 
+/// <summary>A Vector2 in 2D space</summary>
 readonly record struct Vector2 (double X, double Y) {
    /// <summary>Length of the vector</summary>
    public double Length => Sqrt (X * X + Y * Y);
+
+   public double Dot (Vector2 b) => X * b.X + Y * b.Y;
+
+   public double ZCross (Vector2 b) => X * b.Y - b.X * Y;
+
+   public static Vector2 operator + (Vector2 a, Vector2 b) => new (a.X + b.X, a.Y + b.Y);
+   public static Vector2 operator * (Vector2 a, double f) => new (a.X * f, a.Y * f);
+   public static Vector2 operator - (Vector2 a) => new (-a.X, -a.Y);
+}
+
+class Matrix2 {
+   public Matrix2 (double m11, double m12, double m21, double m22, double dx, double dy)
+      => (M11, M12, M21, M22, DX, DY) = (m11, m12, m21, m22, dx, dy);
+
+   public static Matrix2 Translation (Vector2 v)
+      => new (1, 0, 0, 1, v.X, v.Y);
+   public static Matrix2 Scaling (double f)
+      => new (f, 0, 0, f, 0, 0);
+   public static Matrix2 Rotation (double theta) {
+      var (s, c) = (Sin (theta), Cos (theta));
+      return new (c, s, -s, c, 0, 0);
+   }
+
+   public static Point2 operator * (Point2 p, Matrix2 m)
+      => new (p.X * m.M11 + p.Y * m.M21 + m.DX, p.X * m.M12 + p.Y * m.M22 + m.DY);
+
+   public static Matrix2 operator * (Matrix2 a, Matrix2 b)
+      => new (a.M11 * b.M11 + a.M12 * b.M21, a.M11 * b.M12 + a.M12 * b.M22,
+              a.M21 * b.M11 + a.M22 * b.M21, a.M21 * b.M12 + a.M22 * b.M22,
+              a.DX * b.M11 + a.DY * b.M21 + b.DX, a.DX * b.M12 + a.DY * b.M22 + b.DY);
+
+   public readonly double M11, M12, M21, M22, DX, DY;
 }
 
 /// <summary>Represents a bounding box in 2 dimensions</summary>
 readonly struct Bound2 {
+   /// <summary>Compute the bound of a set of points</summary>
    public Bound2 (IEnumerable<Point2> pts) {
       X0 = Y0 = double.MaxValue; X1 = Y1 = double.MinValue;
       foreach (var (x, y) in pts) {
@@ -45,6 +79,7 @@ readonly struct Bound2 {
    public override string ToString ()
       => $"{Round (X0, 3)},{Round (Y0, 3)} to {Round (X1, 3)},{Round (Y1, 3)}";
 
+   /// <summary>Compute the overall bound of a set of bounds (union)</summary>
    public Bound2 (IEnumerable<Bound2> bounds) {
       X0 = Y0 = double.MaxValue; X1 = Y1 = double.MinValue;
       foreach (var b in bounds) {
@@ -68,6 +103,7 @@ class Polygon {
    public IReadOnlyList<Point2> Pts => mPts;
    readonly Point2[] mPts;
 
+   /// <summary>The bound of the polygon</summary>
    public Bound2 Bound {
       get {
          if (mBound.IsEmpty) mBound = new Bound2 (mPts);
@@ -76,10 +112,16 @@ class Polygon {
    }
    Bound2 mBound;
 
-   public IEnumerable<(Point2 A, Point2 B)> Lines {
-      get {
-         for (int i = 0, n = mPts.Length; i < n; i++)
-            yield return (mPts[i], mPts[(i + 1) % n]);
+   public static Polygon operator * (Polygon p, Matrix2 m)
+      => new Polygon (p.Pts.Select (a => a * m));
+
+   /// <summary>Enumerate all the 'lines' in this Polygon</summary>
+   public IEnumerable<(Point2 A, Point2 B)> EnumLines (Matrix2 xfm) {
+      Point2 p0 = mPts[^1] * xfm;
+      for (int i = 0, n = mPts.Length; i < n; i++) {
+         Point2 p1 = mPts[i] * xfm;
+         yield return (p0, p1);
+         p0 = p1;
       }
    }
 }
@@ -87,10 +129,18 @@ class Polygon {
 /// <summary>A drawing is a collection of polygons</summary>
 class Drawing {
    public void Add (Polygon poly) {
-      mPolys.Add (poly); 
+      mPolys.Add (poly);
       mBound = new (); 
    }
+
    public IReadOnlyList<Polygon> Polys => mPolys;
+   List<Polygon> mPolys = new ();
+
+   public static Drawing operator * (Drawing d, Matrix2 m) {
+      Drawing d2 = new Drawing ();
+      foreach (var p in d.Polys) d2.Add (p * m);
+      return d2;
+   }
 
    public Bound2 Bound {
       get {
@@ -100,5 +150,10 @@ class Drawing {
    }
    Bound2 mBound;
 
-   List<Polygon> mPolys = new ();
+   public Bound2 GetBound (Matrix2 xfm) 
+      => new Bound2 (Polys.SelectMany (a => a.Pts.Select (p => p * xfm)));
+
+   /// <summary>Enumerate all the lines in this drawing</summary>
+   public IEnumerable<(Point2 A, Point2 B)> EnumLines (Matrix2 xfm) 
+      => mPolys.SelectMany (a => a.EnumLines (xfm));
 }

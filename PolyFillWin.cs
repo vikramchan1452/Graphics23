@@ -37,8 +37,8 @@ class PolyFillWin : Window {
    void NextFrame (object s, EventArgs e) {
       using (new BlockTimer ("Leaf")) {
          mBmp.Begin ();
-         // DrawLeaf ();
-         DrawFatLines ();
+         DrawLeaf ();
+         // DrawFatLines ();
          mBmp.End ();
       }
    }
@@ -56,26 +56,32 @@ class PolyFillWin : Window {
       mBmp.Begin ();
       mBmp.Clear (192);
 
+      Matrix2 xfm1 = Matrix2.Rotation (mRotate * Math.PI / 180);
+      var bound = mDwg.GetBound (xfm1);
+      var xfm2 = ComposeViewXfm (bound, mBmp.Width, mBmp.Height, 20);
+
+      Matrix2 xfm = xfm1 * xfm2;
       mPF.Reset ();
-      foreach (var (a, b) in EnumLines ())
+      foreach (var (a, b) in mDwg.EnumLines (xfm))
          mPF.AddLine (a, b);
       mPF.Fill (mBmp, 255);
-      foreach (var (a, b) in EnumLines ())
+      foreach (var (a, b) in mDwg.EnumLines (xfm))
          mBmp.DrawLine (a, b, 0);
 
       mBmp.End ();
-
-      // Enumerate all the lines from the Dwg
-      IEnumerable<(Point2 A, Point2 B)> EnumLines () {
-         foreach (var poly in mDwg.Polys) {
-            for (int n = poly.Pts.Count, i = 0; i < n; i++) {
-               int j = (i + 1) % n;
-               yield return (poly.Pts[i], poly.Pts[j]);
-            }
-         }
-      }
+      mRotate++;
    }
    PolyFill mPF = new ();
+   int mRotate = 45;
+
+   Matrix2 ComposeViewXfm (Bound2 bound, int width, int height, int margin) {
+      double xScale = ((width - margin * 2) / bound.Width),
+             yScale = ((height - margin * 2) / bound.Height);
+      double scale = Math.Min (xScale, yScale);
+      return Matrix2.Translation (new Vector2 (-bound.Midpoint.X, -bound.Midpoint.Y))
+           * Matrix2.Scaling (scale)
+           * Matrix2.Translation (new Vector2 (width / 2, height / 2));
+   }
 
    Drawing LoadDrawing () {
       Drawing dwg = new ();

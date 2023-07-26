@@ -129,9 +129,19 @@ class GrayBMP {
 
    public void DrawThickLine (Point2 a, Point2 b, double thickness, int gray) {
       Begin ();
-      DrawLine (a, b, gray);
+      mPF.Reset ();
+      double slope = a.AngleTo (b), radius = thickness / 2;
+      for (int i = 0; i < 4; i++) {
+         mPts[i] = b.RadialMove (radius, slope - PI / 2 + i * PI / 3);
+         mPts[i + 4] = a.RadialMove (radius, slope + PI / 2 + i * PI / 3);
+      }
+      for (int i = 0; i < 8; i++) 
+         mPF.AddLine (mPts[i], mPts[(i + 1) % 8]);
+      mPF.Fill (this, gray);
       End ();
    }
+   Point2[] mPts = new Point2[8];
+   PolyFill mPF = new ();
 
    /// <summary>Call End after finishing the update of the bitmap</summary>
    public void End () {
