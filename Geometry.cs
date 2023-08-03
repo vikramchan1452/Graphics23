@@ -124,13 +124,16 @@ class Polygon {
          p0 = p1;
       }
    }
+
 }
 
 /// <summary>A drawing is a collection of polygons</summary>
 class Drawing {
    public void Add (Polygon poly) {
       mPolys.Add (poly);
-      mBound = new (); 
+      if (mConvexEnvelope is not null) 
+         GetEnvelope(mConvexEnvelope.Concat(poly.Pts));
+      mBound = new ();
    }
 
    public IReadOnlyList<Polygon> Polys => mPolys;
@@ -144,16 +147,49 @@ class Drawing {
 
    public Bound2 Bound {
       get {
-         if (mBound.IsEmpty) mBound = new (Polys.Select (a => a.Bound));
+         if (mBound.IsEmpty) mBound = new (ConvexHull);
          return mBound;
       }
    }
    Bound2 mBound;
 
-   public Bound2 GetBound (Matrix2 xfm) 
-      => new Bound2 (Polys.SelectMany (a => a.Pts.Select (p => p * xfm)));
+   public Bound2 GetBound (Matrix2 xfm)
+      => new (ConvexHull.Select (a => a * xfm));
 
    /// <summary>Enumerate all the lines in this drawing</summary>
-   public IEnumerable<(Point2 A, Point2 B)> EnumLines (Matrix2 xfm) 
-      => mPolys.SelectMany (a => a.EnumLines (xfm));
+   public IEnumerable<(Point2 A, Point2 B)> EnumLines (Matrix2 xfm) {
+      //return mPolys.SelectMany (a => a.EnumLines (xfm));
+      var Hull = ConvexHull;
+      var p0 = Hull[^1] * xfm;
+      foreach (var p in Hull) {
+         var p1 = p * xfm;
+         yield return (p0, p1);
+         p0 = p1;
+      }
+   }
+
+   public IReadOnlyList<Point2> ConvexHull {
+      get {
+         if (mConvexEnvelope is null) GetEnvelope (Polys.SelectMany(a => a.Pts));
+         return mConvexEnvelope;
+      }
+   }
+   List<Point2> mConvexEnvelope = null;
+
+   void GetEnvelope(IEnumerable<Point2> pts) {
+      var bottomPt = pts.MinBy (p => p.Y);
+      var spts = pts.OrderBy (a => a.AngleTo (bottomPt)).ToList ();
+      var HullPts = new Stack<Point2> ();
+      HullPts.Push (bottomPt);
+      HullPts.Push (spts[0]);
+      //HullPts.Push (spts[1]);
+      var (x1, y1) = (bottomPt.X, bottomPt.Y);
+      for (int i = 1; i < pts.Count(); i++) {
+         var (x2, y2) = (HullPts.Peek().X, HullPts.Peek().Y);
+         var (x3, y3) = (spts[i].X, spts[i].Y);
+         if (((x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1)) > 0) HullPts.Push (new Point2 (x3, y3));
+         else HullPts.Pop ();
+      }
+      mConvexEnvelope= HullPts.ToList ();
+   }
 }
