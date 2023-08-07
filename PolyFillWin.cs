@@ -65,7 +65,7 @@ class PolyFillWin : Window {
       foreach (var (a, b) in mDwg.EnumLines (xfm))
          mPF.AddLine (a, b);
       mPF.Fill (mBmp, 255);
-      foreach (var (a, b) in mDwg.EnumLines (xfm))
+      foreach (var (a, b) in mDwg.EnumEnvelopeLines (xfm))
          mBmp.DrawLine (a, b, 0);
 
       mBmp.End ();
