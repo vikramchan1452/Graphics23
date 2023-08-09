@@ -124,7 +124,6 @@ class Polygon {
          p0 = p1;
       }
    }
-
 }
 
 /// <summary>A drawing is a collection of polygons</summary>
@@ -154,40 +153,34 @@ class Drawing {
 
    /// <summary>Enumerate all the lines enclosing the convex polygon in this drawing</summary>
    public IEnumerable<(Point2 A, Point2 B)> EnumEnvelopeLines (Matrix2 xfm) {
-      var Hull = ConvexEnvelope;
-      var p0 = Hull[^1] * xfm;
-      foreach (var p in Hull) {
+      var hull = ConvexEnvelope;
+      var p0 = hull[^1] * xfm;
+      foreach (var p in hull) {
          var p1 = p * xfm;
          yield return (p0, p1);
          p0 = p1;
       }
    }
 
-   public IReadOnlyList<Point2> ConvexEnvelope {
-      get {
-         mConvexEnvelope ??= GetEnvelope (Polys.SelectMany (a => a.Pts));
-         return mConvexEnvelope;
-      }
-   }
+   public IReadOnlyList<Point2> ConvexEnvelope 
+      => mConvexEnvelope ??= GetEnvelope (Polys.SelectMany (a => a.Pts));
    IReadOnlyList<Point2> mConvexEnvelope;
 
    /// <summary>Computes the convex envelope lines of given set of polygon points (using Graham scan algorithm)</summary>
    IReadOnlyList<Point2> GetEnvelope (IEnumerable<Point2> pts) {
-      var bottomPt = pts.MinBy (p => p.Y);
-      var sortedPts = pts.OrderBy (a => a.AngleTo (bottomPt)).ToList ();
-      sortedPts.Remove (bottomPt);
-      sortedPts.Prepend (bottomPt);
-      var HullPts = new List<Point2> ();
-      for (int i = 0; i < sortedPts.Count; i++) {
-         var nextPt = sortedPts[i];
-         while (HullPts.Count > 2) {
-            if (IsObtuse (HullPts[^2], HullPts[^1], nextPt)) break;
-            HullPts.Remove (HullPts[^1]);
+      var bottom = pts.MinBy (p => p.Y);
+      var sorted = pts.Where (a => a != bottom).OrderBy (a => a.AngleTo (bottom)).ToList ();
+      sorted.Add (bottom);
+      var hull = new List<Point2> ();
+      for (int i = 0; i < sorted.Count; i++) {
+         var next = sorted[i];
+         while (hull.Count > 2) {
+            var (p1, p2) = (hull[^2], hull[^1]);
+            if ((p2 - p1).ZCross (p2 - next) < 0) break;
+            hull.Remove (hull[^1]);
          }
-         HullPts.Add (nextPt);
+         hull.Add (next);
       }
-      return HullPts;
+      return hull;
    }
-   bool IsObtuse (Point2 p1, Point2 p2, Point2 p3)
-      => (p2 - p1).ZCross (p2 - p3) < 0;
 }
