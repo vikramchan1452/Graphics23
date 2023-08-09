@@ -168,10 +168,9 @@ class Drawing {
 
    /// <summary>Computes the convex envelope lines of given set of polygon points (using Graham scan algorithm)</summary>
    IReadOnlyList<Point2> GetEnvelope (IEnumerable<Point2> pts) {
-      var bottom = pts.MinBy (p => p.Y);
-      var sorted = pts.Where (a => a != bottom).OrderBy (a => a.AngleTo (bottom)).ToList ();
-      sorted.Add (bottom);
-      var hull = new List<Point2> ();
+      Point2 bottom = pts.MinBy (p => p.Y);
+      List<Point2> sorted = pts.Where (a => a != bottom).OrderBy (a => a.AngleTo (bottom)).ToList ();
+      var hull = new List<Point2> () { bottom };
       for (int i = 0; i < sorted.Count; i++) {
          var next = sorted[i];
          while (hull.Count > 2) {
