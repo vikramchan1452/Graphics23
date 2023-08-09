@@ -130,30 +130,56 @@ class Polygon {
 class Drawing {
    public void Add (Polygon poly) {
       mPolys.Add (poly);
-      mBound = new (); 
+      if (mConvexEnvelope is not null) mConvexEnvelope = GetEnvelope (mConvexEnvelope.Concat (poly.Pts));
+      mBound = new ();
    }
 
    public IReadOnlyList<Polygon> Polys => mPolys;
    List<Polygon> mPolys = new ();
 
    public static Drawing operator * (Drawing d, Matrix2 m) {
-      Drawing d2 = new Drawing ();
+      Drawing d2 = new ();
       foreach (var p in d.Polys) d2.Add (p * m);
       return d2;
    }
-
-   public Bound2 Bound {
-      get {
-         if (mBound.IsEmpty) mBound = new (Polys.Select (a => a.Bound));
-         return mBound;
-      }
-   }
    Bound2 mBound;
 
-   public Bound2 GetBound (Matrix2 xfm) 
-      => new Bound2 (Polys.SelectMany (a => a.Pts.Select (p => p * xfm)));
+   public Bound2 GetBound (Matrix2 xfm)
+      => new (ConvexEnvelope.Select (a => a * xfm));
 
    /// <summary>Enumerate all the lines in this drawing</summary>
-   public IEnumerable<(Point2 A, Point2 B)> EnumLines (Matrix2 xfm) 
+   public IEnumerable<(Point2 A, Point2 B)> EnumLines (Matrix2 xfm)
       => mPolys.SelectMany (a => a.EnumLines (xfm));
+
+   /// <summary>Enumerate all the lines enclosing the convex polygon in this drawing</summary>
+   public IEnumerable<(Point2 A, Point2 B)> EnumEnvelopeLines (Matrix2 xfm) {
+      var hull = ConvexEnvelope;
+      var p0 = hull[^1] * xfm;
+      foreach (var p in hull) {
+         var p1 = p * xfm;
+         yield return (p0, p1);
+         p0 = p1;
+      }
+   }
+
+   public IReadOnlyList<Point2> ConvexEnvelope 
+      => mConvexEnvelope ??= GetEnvelope (Polys.SelectMany (a => a.Pts));
+   IReadOnlyList<Point2> mConvexEnvelope;
+
+   /// <summary>Computes the convex envelope lines of given set of polygon points (using Graham scan algorithm)</summary>
+   IReadOnlyList<Point2> GetEnvelope (IEnumerable<Point2> pts) {
+      Point2 bottom = pts.MinBy (p => p.Y);
+      List<Point2> sorted = pts.Where (a => a != bottom).OrderBy (a => a.AngleTo (bottom)).ToList ();
+      var hull = new List<Point2> () { bottom };
+      for (int i = 0; i < sorted.Count; i++) {
+         var next = sorted[i];
+         while (hull.Count > 2) {
+            var (p1, p2) = (hull[^2], hull[^1]);
+            if ((p2 - p1).ZCross (p2 - next) < 0) break;
+            hull.Remove (hull[^1]);
+         }
+         hull.Add (next);
+      }
+      return hull;
+   }
 }
